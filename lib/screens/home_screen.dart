@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'; 
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'productos_screen.dart';
-import 'historial_pedidos_screen.dart';
-import 'ubicacion_screen.dart';
 import 'carrito_screen.dart';
+import 'perfil_cliente_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -14,15 +15,19 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
   final List<Map<String, dynamic>> _carrito = [];
+  final List<Map<String, dynamic>> _favoritos = [];
+  final User? _usuario = FirebaseAuth.instance.currentUser;
 
-  // Funciones para manejar el carrito
+  // ===============================
+  //       CARRITO FUNCTIONS
+  // ===============================
+
   void _agregarAlCarrito(Map<String, dynamic> producto) {
-    final productoExistente = _carrito.indexWhere((p) => p['id'] == producto['id']);
-    
-    if (productoExistente >= 0) {
+    final index = _carrito.indexWhere((p) => p['id'] == producto['id']);
+
+    if (index >= 0) {
       setState(() {
-        _carrito[productoExistente]['cantidad'] = 
-            (_carrito[productoExistente]['cantidad'] ?? 1) + 1;
+        _carrito[index]['cantidad'] = (_carrito[index]['cantidad'] ?? 1) + 1;
       });
     } else {
       setState(() {
@@ -60,6 +65,73 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  // ===============================
+  //       FAVORITOS FUNCTIONS
+  // ===============================
+
+  void _agregarAFavoritos(Map<String, dynamic> producto) {
+    final index = _favoritos.indexWhere((p) => p['id'] == producto['id']);
+
+    if (index >= 0) {
+      // Si ya está en favoritos, lo quitamos
+      setState(() {
+        _favoritos.removeAt(index);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('❌ ${producto['nombre']} removido de favoritos'),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          backgroundColor: Colors.grey,
+        ),
+      );
+    } else {
+      // Si no está, lo agregamos
+      setState(() {
+        _favoritos.add({...producto});
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('❤️ ${producto['nombre']} agregado a favoritos'),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          backgroundColor: Colors.pink,
+        ),
+      );
+    }
+  }
+
+  bool _esFavorito(String productoId) {
+    return _favoritos.any((p) => p['id'] == productoId);
+  }
+
+  // ===============================
+  //       WIDGET PRODUCTOS
+  // ===============================
+
+  Widget _buildPantallaProductos() {
+    return Column(
+      children: [
+        _buildBannerPasteleria(),
+        Expanded(
+          child: ProductosScreen(
+            carrito: _carrito,
+            onAgregarAlCarrito: _agregarAlCarrito,
+            onEliminarDelCarrito: _eliminarDelCarrito,
+            onVaciarCarrito: _vaciarCarrito,
+            onAumentarCantidad: _aumentarCantidad,
+            onDisminuirCantidad: _disminuirCantidad,
+            calcularTotal: _calcularTotal,
+            onAgregarAFavoritos: _agregarAFavoritos,
+            esFavorito: _esFavorito,
+          ),
+        ),
+      ],
+    );
+  }
+
   double _calcularTotal() {
     double total = 0;
     for (var item in _carrito) {
@@ -74,30 +146,26 @@ class _HomeScreenState extends State<HomeScreen> {
     int total = 0;
     for (var item in _carrito) {
       final cantidad = item['cantidad'] ?? 1;
-      total += cantidad is int ? cantidad : int.tryParse(cantidad.toString()) ?? 1;
+      total += (cantidad is num) ? cantidad.toInt() : int.tryParse(cantidad.toString()) ?? 1;
     }
     return total;
   }
 
-  // Pantallas del bottom navigation
-  final List<Widget> _screens = [];
+  // ===============================
+  //  NAVEGAR A PANTALLAS
+  // ===============================
 
-  @override
-  void initState() {
-    super.initState();
-    _screens.addAll([
-      ProductosScreen(
-        carrito: _carrito,
-        onAgregarAlCarrito: _agregarAlCarrito,
-        onEliminarDelCarrito: _eliminarDelCarrito,
-        onVaciarCarrito: _vaciarCarrito,
-        onAumentarCantidad: _aumentarCantidad,
-        onDisminuirCantidad: _disminuirCantidad,
-        calcularTotal: _calcularTotal,
+  void _navegarAlPerfil() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PerfilClienteScreen(
+          favoritos: _favoritos,
+          nombreUsuario: _usuario?.displayName ?? 'Usuario FLORI',
+          emailUsuario: _usuario?.email ?? 'No especificado',
+        ),
       ),
-      const UbicacionScreen(),
-      HistorialPedidosScreen(carrito: _carrito),
-    ]);
+    );
   }
 
   void _navegarAlCarrito() {
@@ -115,17 +183,93 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ===============================
+  //       WIDGETS PERSONALIZADOS
+  // ===============================
+
+  Widget _buildBannerPasteleria() {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      height: 150,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        image: const DecorationImage(
+          image: NetworkImage('https://images.unsplash.com/photo-1578985545062-69928b1d9587'),
+          fit: BoxFit.cover,
+        ),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          color: Colors.black.withOpacity(0.3),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const SizedBox(height: 8),
+              Text(
+                'Panadería y Pastelería',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                  letterSpacing: 1,
+                  shadows: [
+                    Shadow(
+                      blurRadius: 10,
+                      color: Colors.black.withOpacity(0.8),
+                      offset: const Offset(2, 2),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'El aroma que enamora… el sabor que conquista.',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white,
+                  fontStyle: FontStyle.italic,
+                  shadows: [
+                    Shadow(
+                      blurRadius: 8,
+                      color: Colors.black.withOpacity(0.8),
+                      offset: const Offset(1, 1),
+                    ),
+                  ],
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ===============================
+  //       BUILD
+  // ===============================
+
   @override
   Widget build(BuildContext context) {
     final totalProductos = _calcularTotalProductos();
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('FLORI - Panadería y Pastelería'),
+        title: Text(
+          'FLORI',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.5,
+          ),
+        ),
         backgroundColor: Colors.brown.shade700,
         foregroundColor: Colors.white,
         actions: [
-          // Contador del carrito en el AppBar (arriba a la derecha)
           Stack(
             children: [
               IconButton(
@@ -161,27 +305,70 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: _screens[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index),
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.bakery_dining),
-            label: 'Productos',
+
+      body: _buildPantallaProductos(),
+
+      bottomNavigationBar: Container(
+        height: 70,
+        decoration: BoxDecoration(
+          color: Colors.brown.shade50,
+          border: Border(
+            top: BorderSide(
+              color: Colors.brown.shade300,
+              width: 1,
+            ),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.location_on),
-            label: 'Ubicación',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history),
-            label: 'Historial',
-          ),
-        ],
-        backgroundColor: Colors.brown.shade50,
-        selectedItemColor: Colors.brown.shade700,
-        unselectedItemColor: Colors.brown.shade400,
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.bakery_dining,
+                    size: 30,
+                    color: Colors.brown.shade800,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Productos',
+                    style: TextStyle(
+                      color: Colors.brown.shade800,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 1,
+              height: 40,
+              color: Colors.brown.shade300,
+            ),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.person, size: 30),
+                    onPressed: _navegarAlPerfil,
+                    color: Colors.brown.shade700,
+                  ),
+                  Text(
+                    'Perfil',
+                    style: TextStyle(
+                      color: Colors.brown.shade800,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
