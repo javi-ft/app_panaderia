@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'historial_pedidos_screen.dart';
 import 'ubicacion_screen.dart';
 import 'favoritos_screen.dart';
+import 'sensores_screen.dart';
 
 class PerfilClienteScreen extends StatelessWidget {
   final List<Map<String, dynamic>> favoritos;
@@ -74,6 +75,19 @@ class PerfilClienteScreen extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (context) => FavoritosScreen(favoritos: favoritos),
+                ),
+              );
+            },
+          ),
+            _buildMenuOption(
+            icon: Icons.sensors,
+            title: 'Sensores del Móvil ',
+            badgeCount: favoritos.length,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const SensoresScreen()
                 ),
               );
             },

@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'productos_screen.dart';
 import 'carrito_screen.dart';
 import 'perfil_cliente_screen.dart';
+import 'sensores_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -64,7 +65,12 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     });
   }
-
+  void _navegarASensores() {
+  Navigator.push(
+    context,
+    MaterialPageRoute(builder: (context) => const SensoresScreen()),
+    );
+  }
   // ===============================
   //       FAVORITOS FUNCTIONS
   // ===============================
@@ -306,7 +312,11 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
 
-      body: _buildPantallaProductos(),
+      // KEY FIX: Usar una Key única para evitar que ProductosScreen se reconstruya completamente
+      body: KeyedSubtree(
+        key: const ValueKey('productos_screen'),
+        child: _buildPantallaProductos(),
+      ),
 
       bottomNavigationBar: Container(
         height: 70,
