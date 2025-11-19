@@ -1,12 +1,44 @@
 workflows:
-  default-workflow:
-    name: Build Flutter App
+  ios_android_build:
+    name: Build iOS & Android
+    max_build_duration: 60
+
     environment:
       flutter: stable
+      xcode: latest
 
     scripts:
-      - flutter pub get
-      - flutter build apk --release
+      - name: Flutter pub get
+        script: flutter pub get
+
+      - name: Ensure iOS build config exists
+        script: |
+          cd ios
+          rm -rf Pods Podfile.lock
+          pod install --repo-update
+          cd ..
+
+      - name: Set Minimum iOS Version to 14.0
+        script: |
+          INFO_PLIST="ios/Runner/Info.plist"
+          FRAMEWORK_PLIST="ios/Flutter/AppFrameworkInfo.plist"
+
+          for PLIST in "$INFO_PLIST" "$FRAMEWORK_PLIST"; do
+            if [ -f "$PLIST" ]; then
+              plutil -replace MinimumOSVersion -string "14.0" "$PLIST" || \
+              plutil -insert MinimumOSVersion -string "14.0" "$PLIST"
+              echo "Updated MinimumOSVersion in $PLIST"
+            else
+              echo "NOT FOUND: $PLIST"
+            fi
+          done
+
+      - name: Build iOS (no-codesign)
+        script: flutter build ios --release --no-codesign
+
+      - name: Build Android APK
+        script: flutter build apk --release
 
     artifacts:
       - build/**/outputs/**/*.apk
+      - build/ios/ipa/**/*.ipa
