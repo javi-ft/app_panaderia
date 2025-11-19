@@ -7,7 +7,7 @@ import 'screens/perfil_cliente_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
@@ -16,7 +16,7 @@ void main() async {
   } catch (e) {
     print('❌ Error inicializando Firebase: $e');
   }
-  
+
   runApp(MyApp());
 }
 
@@ -33,7 +33,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: const LoginScreen(),
+      home: const SplashScreen(), // Cambiado a SplashScreen
       routes: {
         '/home': (context) => HomeScreen(),
       },
@@ -41,6 +41,141 @@ class MyApp extends StatelessWidget {
   }
 }
 
+// SPLASH SCREEN AGREGADO
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _navigateToNextScreen();
+  }
+
+  void _navigateToNextScreen() async {
+    // Espera 2 segundos en el splash screen
+    await Future.delayed(const Duration(seconds: 6));
+
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const LoginScreen(), // Va directo al Login
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.brown.shade700,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // IMAGEN DEL LOGO
+            Container(
+              width: 200,
+              height: 200,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(100),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(100),
+                child: Image.asset(
+                  'assets/splash_logo.gif',
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Icon(
+                      Icons.bakery_dining,
+                      size: 80,
+                      color: Colors.brown,
+                    );
+                  },
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 30),
+
+            Text(
+              'FLORI',
+              style: TextStyle(
+                fontSize: 42,
+                fontWeight: FontWeight.w900,
+                color: Colors.white,
+                letterSpacing: 3,
+                shadows: [
+                  Shadow(
+                    blurRadius: 15,
+                    color: Colors.black.withOpacity(0.5),
+                    offset: const Offset(3, 3),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
+            Text(
+              'Panadería y Pastelería',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+                letterSpacing: 1,
+              ),
+            ),
+
+            const SizedBox(height: 5),
+
+            Text(
+              'El aroma que enamora… el sabor que conquista.',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.white.withOpacity(0.8),
+                fontStyle: FontStyle.italic,
+              ),
+              textAlign: TextAlign.center,
+            ),
+
+            const SizedBox(height: 40),
+
+            const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              strokeWidth: 3,
+            ),
+
+            const SizedBox(height: 20),
+
+            Text(
+              'Cargando...',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.7),
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// TU LOGIN SCREEN ORIGINAL (TODO EL CÓDIGO QUE YA TENÍAS)
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -56,14 +191,15 @@ class _LoginScreenState extends State<LoginScreen> {
   final _lastNameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _dniController = TextEditingController();
-  
+
   final _auth = FirebaseAuth.instance;
   bool _isLoading = false;
   bool _isLogin = true;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
-  final String logoUrl = 'https://lh3.googleusercontent.com/d/1omg43EfoMAS2riKZzJAg99ih_LFJIue7';
+  final String logoUrl =
+      'https://lh3.googleusercontent.com/d/1omg43EfoMAS2riKZzJAg99ih_LFJIue7';
 
   // Validaciones
   bool get _isValidEmail {
@@ -86,9 +222,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool get _isValidPhone {
     final phone = _phoneController.text.trim();
-    return phone.length == 9 && 
-           phone.startsWith('9') && 
-           RegExp(r'^[0-9]+$').hasMatch(phone);
+    return phone.length == 9 &&
+        phone.startsWith('9') &&
+        RegExp(r'^[0-9]+$').hasMatch(phone);
   }
 
   bool get _isValidDNI {
@@ -195,23 +331,18 @@ class _LoginScreenState extends State<LoginScreen> {
 
         // Actualizar perfil del usuario con nombre completo
         await userCredential.user!.updateDisplayName(
-          '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}'
-        );
+            '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}');
 
-        // Aquí puedes agregar más datos del usuario a Firestore si es necesario
-        // await _saveUserToFirestore(userCredential.user!);
-        
         _showSuccess('¡Cuenta creada exitosamente! ¡Bienvenido a FLORI!');
       }
-      
+
       // Navegar al home después del éxito
       Future.delayed(const Duration(milliseconds: 1500), () {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
+          MaterialPageRoute(builder: (context) => HomeScreen()),
         );
       });
-      
     } on FirebaseAuthException catch (e) {
       String message = 'Error de autenticación';
       switch (e.code) {
@@ -358,9 +489,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  _isLogin 
-                    ? 'Inicia sesión en tu cuenta'
-                    : 'Completa tus datos para registrarte',
+                  _isLogin
+                      ? 'Inicia sesión en tu cuenta'
+                      : 'Completa tus datos para registrarte',
                   style: TextStyle(
                     fontSize: 16,
                     color: Colors.grey.shade600,
@@ -387,21 +518,23 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       // Campos de registro (solo visible en registro)
                       if (!_isLogin) ..._buildRegisterFields(),
-                      
+
                       // Campo Email
                       TextField(
                         controller: _emailController,
                         decoration: InputDecoration(
                           labelText: 'Email',
                           hintText: 'tu@email.com',
-                          prefixIcon: const Icon(Icons.email_outlined, color: Colors.brown),
+                          prefixIcon: const Icon(Icons.email_outlined,
+                              color: Colors.brown),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(color: Colors.grey.shade300),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Colors.brown, width: 2),
+                            borderSide:
+                                const BorderSide(color: Colors.brown, width: 2),
                           ),
                           errorText: _emailError,
                           errorMaxLines: 2,
@@ -417,11 +550,16 @@ class _LoginScreenState extends State<LoginScreen> {
                         controller: _passwordController,
                         decoration: InputDecoration(
                           labelText: 'Contraseña',
-                          hintText: _isLogin ? 'Ingresa tu contraseña' : 'Crea una contraseña segura',
-                          prefixIcon: const Icon(Icons.lock_outline, color: Colors.brown),
+                          hintText: _isLogin
+                              ? 'Ingresa tu contraseña'
+                              : 'Crea una contraseña segura',
+                          prefixIcon: const Icon(Icons.lock_outline,
+                              color: Colors.brown),
                           suffixIcon: IconButton(
                             icon: Icon(
-                              _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                              _obscurePassword
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
                               color: Colors.grey,
                             ),
                             onPressed: _togglePasswordVisibility,
@@ -432,23 +570,26 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Colors.brown, width: 2),
+                            borderSide:
+                                const BorderSide(color: Colors.brown, width: 2),
                           ),
                           errorText: _passwordError,
                           errorMaxLines: 3,
                         ),
                         obscureText: _obscurePassword,
-                        textInputAction: _isLogin ? TextInputAction.done : TextInputAction.next,
+                        textInputAction: _isLogin
+                            ? TextInputAction.done
+                            : TextInputAction.next,
                         onSubmitted: (_) => _isLogin ? _authenticate() : null,
                         onChanged: (_) => setState(() {}),
                       ),
-                      
+
                       // Indicador de fortaleza de contraseña (solo en registro)
                       if (!_isLogin && _passwordController.text.isNotEmpty) ...[
                         const SizedBox(height: 12),
                         _buildPasswordStrength(),
                       ],
-                      
+
                       // Campo Confirmar Contraseña (solo en registro)
                       if (!_isLogin) ...[
                         const SizedBox(height: 16),
@@ -457,25 +598,32 @@ class _LoginScreenState extends State<LoginScreen> {
                           decoration: InputDecoration(
                             labelText: 'Confirmar Contraseña',
                             hintText: 'Repite tu contraseña',
-                            prefixIcon: const Icon(Icons.lock_reset, color: Colors.brown),
+                            prefixIcon: const Icon(Icons.lock_reset,
+                                color: Colors.brown),
                             suffixIcon: IconButton(
                               icon: Icon(
-                                _obscureConfirmPassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                                _obscureConfirmPassword
+                                    ? Icons.visibility_outlined
+                                    : Icons.visibility_off_outlined,
                                 color: Colors.grey,
                               ),
                               onPressed: _toggleConfirmPasswordVisibility,
                             ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey.shade300),
+                              borderSide:
+                                  BorderSide(color: Colors.grey.shade300),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: Colors.brown, width: 2),
+                              borderSide: const BorderSide(
+                                  color: Colors.brown, width: 2),
                             ),
-                            errorText: _confirmPasswordController.text.isNotEmpty && !_passwordsMatch 
-                                ? 'Las contraseñas no coinciden' 
-                                : null,
+                            errorText:
+                                _confirmPasswordController.text.isNotEmpty &&
+                                        !_passwordsMatch
+                                    ? 'Las contraseñas no coinciden'
+                                    : null,
                           ),
                           obscureText: _obscureConfirmPassword,
                           textInputAction: TextInputAction.done,
@@ -483,7 +631,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           onChanged: (_) => setState(() {}),
                         ),
                       ],
-                      
+
                       const SizedBox(height: 24),
 
                       // Botón de acción
@@ -507,16 +655,23 @@ class _LoginScreenState extends State<LoginScreen> {
                                   height: 24,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white),
                                   ),
                                 )
                               : Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(_isLogin ? Icons.login : Icons.person_add, size: 20),
+                                    Icon(
+                                        _isLogin
+                                            ? Icons.login
+                                            : Icons.person_add,
+                                        size: 20),
                                     const SizedBox(width: 8),
                                     Text(
-                                      _isLogin ? 'Iniciar Sesión' : 'Crear Cuenta',
+                                      _isLogin
+                                          ? 'Iniciar Sesión'
+                                          : 'Crear Cuenta',
                                       style: const TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w600,
@@ -530,8 +685,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       // Cambiar entre login y registro
                       TextButton(
-                        onPressed: _isLoading 
-                            ? null 
+                        onPressed: _isLoading
+                            ? null
                             : () {
                                 setState(() {
                                   _isLogin = !_isLogin;
@@ -687,7 +842,8 @@ class _LoginScreenState extends State<LoginScreen> {
               decoration: InputDecoration(
                 labelText: 'Nombres',
                 hintText: 'Tus nombres',
-                prefixIcon: const Icon(Icons.person_outline, color: Colors.brown),
+                prefixIcon:
+                    const Icon(Icons.person_outline, color: Colors.brown),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(color: Colors.grey.shade300),
@@ -775,7 +931,7 @@ class _LoginScreenState extends State<LoginScreen> {
     Color color;
     String text;
     String description;
-    
+
     switch (strength) {
       case 1:
         color = Colors.red;

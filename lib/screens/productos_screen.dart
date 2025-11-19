@@ -11,8 +11,9 @@ class ProductosScreen extends StatefulWidget {
   final void Function(int) onAumentarCantidad;
   final void Function(int) onDisminuirCantidad;
   final double Function() calcularTotal;
-  final void Function(Map<String, dynamic>) onAgregarAFavoritos; // NUEVO
-  final bool Function(String) esFavorito; // NUEVO
+  final void Function(Map<String, dynamic>) onAgregarAFavoritos;
+  final bool Function(String) esFavorito;
+  final ScrollController? scrollController;
 
   const ProductosScreen({
     super.key,
@@ -23,8 +24,9 @@ class ProductosScreen extends StatefulWidget {
     required this.onAumentarCantidad,
     required this.onDisminuirCantidad,
     required this.calcularTotal,
-    required this.onAgregarAFavoritos, // NUEVO
-    required this.esFavorito, // NUEVO
+    required this.onAgregarAFavoritos,
+    required this.esFavorito,
+    this.scrollController,
   });
 
   @override
@@ -109,43 +111,45 @@ class _ProductosScreenState extends State<ProductosScreen>
   }
 
   Widget _buildCategoriaChip(String categoria, bool seleccionada) {
-    return GestureDetector(
-      onTap: () {
-        setState(() => _categoriaSeleccionada = categoria);
-      },
-      child: Container(
-        margin: const EdgeInsets.only(right: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        decoration: BoxDecoration(
-          gradient: seleccionada
-              ? LinearGradient(
-                  colors: [Colors.brown.shade600, Colors.brown.shade400],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                )
-              : null,
-          color: seleccionada ? null : Colors.brown.shade50,
-          borderRadius: BorderRadius.circular(25),
-          border: Border.all(
-            color: seleccionada ? Colors.brown.shade600 : Colors.brown.shade200,
-            width: seleccionada ? 2 : 1,
+    return Container(
+      margin: const EdgeInsets.only(right: 8),
+      child: GestureDetector(
+        onTap: () {
+          setState(() => _categoriaSeleccionada = categoria);
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          decoration: BoxDecoration(
+            gradient: seleccionada
+                ? LinearGradient(
+                    colors: [Colors.brown.shade600, Colors.brown.shade400],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : null,
+            color: seleccionada ? null : Colors.brown.shade50,
+            borderRadius: BorderRadius.circular(25),
+            border: Border.all(
+              color: seleccionada ? Colors.brown.shade600 : Colors.brown.shade200,
+              width: seleccionada ? 2 : 1,
+            ),
+            boxShadow: seleccionada
+                ? [
+                    BoxShadow(
+                      color: Colors.brown.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ]
+                : null,
           ),
-          boxShadow: seleccionada
-              ? [
-                  BoxShadow(
-                    color: Colors.brown.withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ]
-              : null,
-        ),
-        child: Text(
-          categoria,
-          style: TextStyle(
-            color: seleccionada ? Colors.white : Colors.brown.shade700,
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
+          child: Text(
+            categoria,
+            style: TextStyle(
+              color: seleccionada ? Colors.white : Colors.brown.shade700,
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+            ),
           ),
         ),
       ),
@@ -427,7 +431,7 @@ class _ProductosScreenState extends State<ProductosScreen>
             ),
           ),
 
-          // Categorías deslizables
+          // Categorías deslizables - CORREGIDO (HORIZONTAL)
           Container(
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
             color: Colors.white,
@@ -450,8 +454,9 @@ class _ProductosScreenState extends State<ProductosScreen>
 
                     _categorias = categoriasSet.toList();
 
+                    // LISTVIEW HORIZONTAL CORREGIDO
                     return ListView.builder(
-                      scrollDirection: Axis.horizontal,
+                      scrollDirection: Axis.horizontal, // ← ESTA ES LA CORRECCIÓN
                       itemCount: _categorias.length,
                       itemBuilder: (context, index) {
                         final categoria = _categorias[index];
@@ -547,6 +552,8 @@ class _ProductosScreenState extends State<ProductosScreen>
                 }
 
                 return ListView.builder(
+                  controller: widget.scrollController,
+                  padding: const EdgeInsets.all(16),
                   itemCount: productosFiltrados.length,
                   itemBuilder: (context, index) {
                     final doc = productosFiltrados[index];

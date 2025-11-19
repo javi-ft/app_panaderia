@@ -47,6 +47,31 @@ class _CarritoScreenState extends State<CarritoScreen> {
 
   bool get _puedeRealizarPedido => widget.carrito.isNotEmpty && !_isLoading;
 
+  // FUNCIÓN PARA CONVERTIR ENLACES DE DRIVE - IGUAL QUE EN FAVORITOS
+  String convertirEnlaceDriveADirecto(String enlaceDrive) {
+    final regExp = RegExp(r'/d/([a-zA-Z0-9_-]+)');
+    final match = regExp.firstMatch(enlaceDrive);
+    if (match != null && match.groupCount >= 1) {
+      final id = match.group(1);
+      return 'https://drive.google.com/uc?export=view&id=$id&w=300&h=300';
+    } else {
+      return enlaceDrive;
+    }
+  }
+
+  // WIDGET PLACEHOLDER PARA IMÁGENES - SIMILAR A FAVORITOS
+  Widget _buildPlaceholderImagen() {
+    return Container(
+      width: 70,
+      height: 70,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade200,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Icon(Icons.shopping_bag, color: Colors.grey, size: 30),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -624,6 +649,10 @@ class _CarritoScreenState extends State<CarritoScreen> {
     final subtotal = precio * cantidad;
     final productoId = item['id']?.toString() ?? index.toString();
     final productoNombre = item['nombre'] ?? 'Producto';
+    
+    // Obtener y convertir la imagen - IGUAL QUE EN FAVORITOS
+    final urlImagenOriginal = item['imagen']?.toString() ?? '';
+    final urlImagenDirecta = convertirEnlaceDriveADirecto(urlImagenOriginal);
 
     return Dismissible(
       key: Key('carrito_item_$productoId'),
@@ -685,23 +714,38 @@ class _CarritoScreenState extends State<CarritoScreen> {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                // Imagen del producto
+                // IMAGEN DEL PRODUCTO - CORREGIDA CON Image.network
                 Container(
                   width: 70,
                   height: 70,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    color: Colors.grey.shade100,
-                    image: item['imagen'] != null && item['imagen'].toString().isNotEmpty
-                        ? DecorationImage(
-                            image: NetworkImage(item['imagen']!),
-                            fit: BoxFit.cover,
-                          )
-                        : null,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.2),
+                        blurRadius: 5,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
-                  child: item['imagen'] == null || item['imagen'].toString().isEmpty
-                      ? Icon(Icons.shopping_bag, color: Colors.grey.shade400, size: 30)
-                      : null,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: urlImagenOriginal.isNotEmpty
+                        ? Image.network(
+                            urlImagenDirecta,
+                            width: 70,
+                            height: 70,
+                            fit: BoxFit.cover,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return _buildPlaceholderImagen();
+                            },
+                            errorBuilder: (context, error, stackTrace) {
+                              return _buildPlaceholderImagen();
+                            },
+                          )
+                        : _buildPlaceholderImagen(),
+                  ),
                 ),
                 const SizedBox(width: 16),
                 
@@ -850,7 +894,6 @@ class _CarritoScreenState extends State<CarritoScreen> {
   }
 }
 
-// Los diálogos de pago se mantienen igual que en tu código original...
 
 // Diálogos de pago especializados
 class TarjetaPagoDialog extends StatefulWidget {
@@ -1186,59 +1229,111 @@ class TransferenciaPagoDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Transferencia Bancaria'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.account_balance, size: 60, color: Colors.blue),
-          const SizedBox(height: 20),
-          Text(
-            'S/ ${total.toStringAsFixed(2)}',
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+    return Dialog(
+      // CORRECCIÓN: Usar Dialog en lugar de AlertDialog para mejor control
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: ConstrainedBox(
+        // CORRECCIÓN: Limitar el tamaño máximo
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.8,
+        ),
+        child: SingleChildScrollView( // CORRECCIÓN: Agregar scroll
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Transferencia Bancaria',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Icon(Icons.account_balance, size: 60, color: Colors.blue),
+                const SizedBox(height: 16),
+                Text(
+                  'S/ ${total.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Datos para la transferencia:',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _buildDatoBanco('Banco:', 'BCP'),
+                _buildDatoBanco('Tipo de cuenta:', 'Ahorros'),
+                _buildDatoBanco('Número de cuenta:', '191-45678901-0-45'),
+                _buildDatoBanco('CCI:', '00219114567890104519'),
+                _buildDatoBanco('Titular:', 'TIENDA ONLINE SAC'),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    'Envía el comprobante a: pagos@tienda.com',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 14),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: onCancelar,
+                        child: const Text('Cancelar'),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: onConfirmar,
+                        child: const Text('Ya transferí'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 20),
-          const Text(
-            'Datos para la transferencia:',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 10),
-          _buildDatoBanco('Banco:', 'BCP'),
-          _buildDatoBanco('Tipo de cuenta:', 'Ahorros'),
-          _buildDatoBanco('Número de cuenta:', '191-45678901-0-45'),
-          _buildDatoBanco('CCI:', '00219114567890104519'),
-          _buildDatoBanco('Titular:', 'TIENDA ONLINE SAC'),
-          const SizedBox(height: 15),
-          const Text(
-            'Envía el comprobante a: pagos@tienda.com',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 12, color: Colors.grey),
-          ),
-        ],
+        ),
       ),
-      actions: [
-        TextButton(
-          onPressed: onCancelar,
-          child: const Text('Cancelar'),
-        ),
-        ElevatedButton(
-          onPressed: onConfirmar,
-          child: const Text('Ya transferí'),
-        ),
-      ],
     );
   }
 
   Widget _buildDatoBanco(String titulo, String valor) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
             width: 120,
-            child: Text(titulo, style: const TextStyle(fontWeight: FontWeight.w500)),
+            child: Text(
+              titulo, 
+              style: const TextStyle(fontWeight: FontWeight.w500),
+            ),
           ),
-          Text(valor, style: const TextStyle(fontFamily: 'Monospace')),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              valor, 
+              style: const TextStyle(fontFamily: 'Monospace'),
+              softWrap: true, // CORRECCIÓN: Permitir wrap de texto
+            ),
+          ),
         ],
       ),
     );
