@@ -1,9 +1,12 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 import 'screens/home_screen.dart';
 import 'screens/perfil_cliente_screen.dart';
+import 'screens/admin_dashboard.dart';
+import 'screens/mobile_home.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,9 +22,22 @@ void main() async {
 
   runApp(MyApp());
 }
-
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Mi App - Administrador',
+      theme: ThemeData(
+        primarySwatch: Colors.indigo,
+        useMaterial3: true,
+      ),
+      home: kIsWeb ? const AdminDashboard() : const MobileHome(),
+    );
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +55,7 @@ class MyApp extends StatelessWidget {
       },
     );
   }
-}
+
 
 // SPLASH SCREEN AGREGADO
 class SplashScreen extends StatefulWidget {

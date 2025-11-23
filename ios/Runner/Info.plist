@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>MinimumOSVersion</key>
-    <string>12.0</string>
+    <string>14.0</string>
     <key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -47,14 +47,5 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
-	<key>NSCameraUsageDescription</key>
-	<string>La app necesita usar la cámara.</string> 
-	<key>NSPhotoLibraryUsageDescription</key> 
-	<string>La app necesita acceder a tus imágenes.</string> 
-	<key>NSAppTransportSecurity</key> 
-	<dict> 
-	<key>NSAllowsArbitraryLoads</key> 
-	<true/> 
-	</dict>
 </dict>
 </plist>

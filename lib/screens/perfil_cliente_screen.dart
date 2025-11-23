@@ -20,7 +20,11 @@ class PerfilClienteScreen extends StatelessWidget {
   void _cerrarSesion(BuildContext context) async {
     try {
       await FirebaseAuth.instance.signOut();
-      Navigator.of(context).popUntil((route) => route.isFirst);
+      // Navegar a la pantalla inicial (login) reemplazando toda la pila de navegación
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        '/', 
+        (route) => false,
+      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -79,10 +83,9 @@ class PerfilClienteScreen extends StatelessWidget {
               );
             },
           ),
-            _buildMenuOption(
+          _buildMenuOption(
             icon: Icons.sensors,
-            title: 'Sensores del Móvil ',
-            badgeCount: favoritos.length,
+            title: 'Sensores del Móvil',
             onTap: () {
               Navigator.push(
                 context,

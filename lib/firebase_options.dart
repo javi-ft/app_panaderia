@@ -85,4 +85,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'polleria-6ceea.firebasestorage.app',
     measurementId: 'G-93GFV7KNSJ',
   );
+
 }
