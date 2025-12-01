@@ -13,7 +13,7 @@ class MapaScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Ubicación - Pastelería Flori',
+          'Ubicación - Pastelería MINIMARKET',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.brown,
@@ -49,7 +49,7 @@ class MapaScreen extends StatelessWidget {
                       size: 40,
                     ),
                     Text(
-                      'Pastelería Flori',
+                      'Pastelería MINIMARKET',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: Colors.black87,

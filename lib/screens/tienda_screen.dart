@@ -62,7 +62,7 @@ class _TiendaScreenState extends State<TiendaScreen> {
 
   // 💬 FUNCIÓN PARA WHATSAPP
   void _enviarWhatsApp() async {
-    final message = 'Hola, quiero información de sus productos de panadería';
+    final message = 'Hola, quiero información de sus productos de MINIMARKET';
     final url = Uri.parse('https://wa.me/51944975522?text=${Uri.encodeComponent(message)}');
     
     if (await canLaunchUrl(url)) {
@@ -887,7 +887,7 @@ int _calcularTotalProductos() {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        title: const Text("FLORI"),
+        title: const Text("MINIMARKET"),
         backgroundColor: Colors.brown.shade700,
         foregroundColor: Colors.white,
         elevation: 0,

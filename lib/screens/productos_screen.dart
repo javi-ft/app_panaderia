@@ -14,6 +14,7 @@ class ProductosScreen extends StatefulWidget {
   final void Function(Map<String, dynamic>) onAgregarAFavoritos;
   final bool Function(String) esFavorito;
   final ScrollController? scrollController;
+  final Function(Map<String, dynamic>) onMostrarDetalles;
 
   const ProductosScreen({
     super.key,
@@ -26,6 +27,7 @@ class ProductosScreen extends StatefulWidget {
     required this.calcularTotal,
     required this.onAgregarAFavoritos,
     required this.esFavorito,
+    required this.onMostrarDetalles,
     this.scrollController,
   });
 
@@ -157,32 +159,41 @@ class _ProductosScreenState extends State<ProductosScreen>
   }
 
   Widget _buildProductoCard(
-      DocumentSnapshot doc, Map<String, dynamic> producto) {
-    final urlImagenOriginal = producto['imagen'] ?? '';
-    final urlImagenDirecta = convertirEnlaceDriveADirecto(urlImagenOriginal);
-    final precio = double.tryParse(producto['precio'].toString()) ?? 0.0;
-    final categoria = producto['categoria'] ?? 'General';
-    final descripcion = producto['descripcion'] ?? '';
-    final productoId = doc.id;
-    final esFavorito = widget.esFavorito(productoId);
+    DocumentSnapshot doc, Map<String, dynamic> producto) {
+  final urlImagenOriginal = producto['imagen'] ?? '';
+  final urlImagenDirecta = convertirEnlaceDriveADirecto(urlImagenOriginal);
+  final precio = double.tryParse(producto['precio'].toString()) ?? 0.0;
+  final categoria = producto['categoria'] ?? 'General';
+  final descripcion = producto['descripcion'] ?? '';
+  final productoId = doc.id;
+  final esFavorito = widget.esFavorito(productoId);
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.2),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Card(
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+  return Container(
+    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(20),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.grey.withOpacity(0.2),
+          blurRadius: 15,
+          offset: const Offset(0, 5),
         ),
+      ],
+    ),
+    child: Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: InkWell(
+        onTap: () {
+          final productoConId = {
+            ...producto,
+            'id': productoId,
+          };
+          widget.onMostrarDetalles(productoConId);
+        },
+        borderRadius: BorderRadius.circular(20),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -391,8 +402,9 @@ class _ProductosScreenState extends State<ProductosScreen>
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {

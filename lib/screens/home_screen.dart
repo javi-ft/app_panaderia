@@ -5,6 +5,9 @@ import 'productos_screen.dart';
 import 'carrito_screen.dart';
 import 'perfil_cliente_screen.dart';
 import 'sensores_screen.dart';
+import '../services/recomendacion_service.dart';
+import 'recomendaciones_screen.dart';
+import '../models/producto_model.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -18,6 +21,192 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Map<String, dynamic>> _carrito = [];
   final List<Map<String, dynamic>> _favoritos = [];
   final User? _usuario = FirebaseAuth.instance.currentUser;
+
+// LUEGO MODIFICA EL MÉTODO _mostrarDetallesConRecomendaciones:
+
+void _mostrarDetallesConRecomendaciones(Map<String, dynamic> productoData) {
+  final recomendacionService = RecomendacionService();
+  
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (context) => FutureBuilder<List<Producto>>(
+      future: recomendacionService.obtenerRecomendacionesPorNombre(
+        productoData['nombre'], 4), // Aumenté a 4 recomendaciones
+      builder: (context, snapshot) {
+        final recomendados = snapshot.data ?? [];
+        final isLoading = snapshot.connectionState == ConnectionState.waiting;
+        
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.7,
+          maxChildSize: 0.9,
+          builder: (_, controller) => Padding(
+            padding: const EdgeInsets.all(16),
+            child: ListView(
+              controller: controller,
+              children: [
+                Center(
+                  child: Container(
+                    width: 50,
+                    height: 5,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+                
+                // Detalles del producto actual
+                Text(
+                  productoData['nombre'],
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Text('Precio: S/ ${productoData['precio']}'),
+                if (productoData['descripcion'] != null && 
+                    productoData['descripcion'].isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    productoData['descripcion'],
+                    style: const TextStyle(color: Colors.grey),
+                  ),
+                ],
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    _agregarAlCarrito(productoData);
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('✅ ${productoData['nombre']} agregado al carrito'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.add_shopping_cart),
+                  label: const Text('Agregar al carrito'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    minimumSize: const Size(double.infinity, 50),
+                  ),
+                ),
+                const Divider(height: 32),
+                
+                // Sección de recomendaciones
+                const Text(
+                  'Productos que podrían gustarte:',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
+                
+                if (isLoading) 
+                  const Center(child: CircularProgressIndicator()),
+                
+                if (!isLoading && recomendados.isEmpty)
+                  _buildSinRecomendaciones(),
+                
+                if (!isLoading && recomendados.isNotEmpty)
+                  ...recomendados.map((prod) => ListTile(
+                    leading: prod.imagen.isNotEmpty
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              prod.imagen, 
+                              width: 50, 
+                              height: 50,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Icon(Icons.shopping_bag),
+                            ),
+                          )
+                        : const Icon(Icons.shopping_bag),
+                    title: Text(prod.nombre),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('S/ ${prod.precio.toStringAsFixed(2)}'),
+                        if (prod.categoria.isNotEmpty)
+                          Text(
+                            prod.categoria,
+                            style: const TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
+                      ],
+                    ),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.add_circle, color: Colors.green),
+                      onPressed: () => _agregarAlCarrito(prod.toMap()),
+                    ),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _mostrarDetallesConRecomendaciones(prod.toMap());
+                    },
+                  )),
+                  
+                const SizedBox(height: 16),
+                
+                if (recomendados.isNotEmpty)
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => RecomendacionesScreen(
+                              productoReferencia: productoData['nombre'],
+                            ),
+                          ),
+                        );
+                      },
+                      child: const Text('Ver más recomendaciones'),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    ),
+  );
+}
+
+// WIDGET PARA CUANDO NO HAY RECOMENDACIONES
+Widget _buildSinRecomendaciones() {
+  return Container(
+    padding: const EdgeInsets.all(20),
+    margin: const EdgeInsets.symmetric(vertical: 10),
+    decoration: BoxDecoration(
+      color: Colors.grey[50],
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: Colors.grey[300]!),
+    ),
+    child: Column(
+      children: [
+        const Icon(Icons.search_off, size: 40, color: Colors.grey),
+        const SizedBox(height: 8),
+        const Text(
+          'No hay recomendaciones disponibles',
+          style: TextStyle(fontSize: 14, color: Colors.grey),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Prueba otros productos similares',
+          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    ),
+  );
+}
 
   // ===============================
   //       CARRITO FUNCTIONS
@@ -132,6 +321,7 @@ class _HomeScreenState extends State<HomeScreen> {
             calcularTotal: _calcularTotal,
             onAgregarAFavoritos: _agregarAFavoritos,
             esFavorito: _esFavorito,
+            onMostrarDetalles: _mostrarDetallesConRecomendaciones,
           ),
         ),
       ],
@@ -167,7 +357,7 @@ class _HomeScreenState extends State<HomeScreen> {
       MaterialPageRoute(
         builder: (context) => PerfilClienteScreen(
           favoritos: _favoritos,
-          nombreUsuario: _usuario?.displayName ?? 'Usuario FLORI',
+          nombreUsuario: _usuario?.displayName ?? 'Usuario MINIMARKET',
           emailUsuario: _usuario?.email ?? 'No especificado',
         ),
       ),
@@ -200,7 +390,7 @@ class _HomeScreenState extends State<HomeScreen> {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         image: const DecorationImage(
-          image: NetworkImage('https://images.unsplash.com/photo-1578985545062-69928b1d9587'),
+          image: NetworkImage('https://invyctaretail.com/wp-content/uploads/2023/04/modulo-check-out-L.webp'),
           fit: BoxFit.cover,
         ),
       ),
@@ -215,7 +405,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               const SizedBox(height: 8),
               Text(
-                'Panadería y Pastelería',
+                'productos frescos y cercanía',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
@@ -266,7 +456,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'FLORI',
+          'MINIMARKET',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.w800,

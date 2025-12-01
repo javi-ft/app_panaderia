@@ -6,7 +6,6 @@ import 'firebase_options.dart';
 import 'screens/home_screen.dart';
 import 'screens/perfil_cliente_screen.dart';
 import 'screens/admin_dashboard.dart';
-import 'screens/mobile_home.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,6 +21,7 @@ void main() async {
 
   runApp(MyApp());
 }
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -29,33 +29,15 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Mi App - Administrador',
-      theme: ThemeData(
-        primarySwatch: Colors.indigo,
-        useMaterial3: true,
-      ),
-      home: kIsWeb ? const AdminDashboard() : const MobileHome(),
-    );
-  }
-}
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Panadería FLORI',
+      title: 'Panel de Administración - MINIMARKET',
       theme: ThemeData(
         primarySwatch: Colors.brown,
         useMaterial3: true,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: const SplashScreen(), // Cambiado a SplashScreen
-      routes: {
-        '/home': (context) => HomeScreen(),
-      },
+      home: const SplashScreen(),
     );
   }
-
+}
 
 // SPLASH SCREEN AGREGADO
 class SplashScreen extends StatefulWidget {
@@ -77,10 +59,11 @@ class _SplashScreenState extends State<SplashScreen> {
     await Future.delayed(const Duration(seconds: 6));
 
     if (mounted) {
+      // ✅ DESPUÉS DEL SPLASH, VA AL LOGIN
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => const LoginScreen(), // Va directo al Login
+          builder: (context) => const AuthWrapper(),
         ),
       );
     }
@@ -109,84 +92,64 @@ class _SplashScreenState extends State<SplashScreen> {
                   ),
                 ],
               ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(100),
-                child: Image.asset(
-                  'assets/splash_logo.gif',
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Icon(
-                      Icons.bakery_dining,
-                      size: 80,
-                      color: Colors.brown,
-                    );
-                  },
-                ),
+              child: Image.asset(
+                'assets/splash_logo.gif',
+                fit: BoxFit.cover,
               ),
             ),
-
             const SizedBox(height: 30),
-
             Text(
-              'FLORI',
+              'MINIMARKET',
               style: TextStyle(
                 fontSize: 42,
                 fontWeight: FontWeight.w900,
                 color: Colors.white,
                 letterSpacing: 3,
-                shadows: [
-                  Shadow(
-                    blurRadius: 15,
-                    color: Colors.black.withOpacity(0.5),
-                    offset: const Offset(3, 3),
-                  ),
-                ],
               ),
+              textAlign: TextAlign.center,
             ),
-
             const SizedBox(height: 10),
-
             Text(
-              'Panadería y Pastelería',
+              'Donde cada mordisco cuenta una historia.',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: Colors.white,
-                letterSpacing: 1,
-              ),
-            ),
-
-            const SizedBox(height: 5),
-
-            Text(
-              'El aroma que enamora… el sabor que conquista.',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.white.withOpacity(0.8),
-                fontStyle: FontStyle.italic,
               ),
               textAlign: TextAlign.center,
             ),
-
             const SizedBox(height: 40),
-
             const CircularProgressIndicator(
               valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              strokeWidth: 3,
-            ),
-
-            const SizedBox(height: 20),
-
-            Text(
-              'Cargando...',
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.7),
-                fontSize: 14,
-              ),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+// GESTOR DE AUTENTICACIÓN
+class AuthWrapper extends StatelessWidget {
+  const AuthWrapper({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasData && snapshot.data != null) {
+          // ✅ USUARIO AUTENTICADO: Web → Admin, Móvil → HomeScreen
+          return kIsWeb ? const AdminDashboard() : HomeScreen();
+        } else {
+          // ✅ USUARIO NO AUTENTICADO: Mostrar Login
+          return const LoginScreen();
+        }
+      },
     );
   }
 }
@@ -349,7 +312,7 @@ class _LoginScreenState extends State<LoginScreen> {
         await userCredential.user!.updateDisplayName(
             '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}');
 
-        _showSuccess('¡Cuenta creada exitosamente! ¡Bienvenido a FLORI!');
+        _showSuccess('¡Cuenta creada exitosamente! ¡Bienvenido a MINIMARKET!');
       }
 
       // Navegar al home después del éxito
@@ -495,7 +458,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 // Título
                 Text(
-                  _isLogin ? 'Bienvenido a FLORI' : 'Crear Cuenta',
+                  _isLogin ? 'Bienvenido a MINIMARKET' : 'Crear Cuenta',
                   style: const TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
@@ -727,7 +690,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 // Información adicional
                 const SizedBox(height: 32),
                 Text(
-                  'Panadería y Pastelería FLORI',
+                  'productos frescos y cercanía MINIMARKET',
                   style: TextStyle(
                     color: Colors.grey.shade500,
                     fontSize: 14,

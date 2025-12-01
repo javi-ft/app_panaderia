@@ -1,20 +1,26 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.app_panaderia">
     
+    <!-- Permisos ordenados y sin duplicados -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.INTERNET"/>
     
     <application
         android:label="Panaderia FLORI"
-        android:name="${applicationName}"
+        android:name="androidx.multidex.MultiDexApplication"
         android:icon="@mipmap/ic_launcher">
         
-        <!-- 🔑 AGREGA ESTA LÍNEA CON TU API KEY REAL -->
+        <!-- API Key de Google Maps (reemplaza con tu key real) -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="TU_API_KEY_REAL_AQUI"/>
+        
+        <!-- Actividad principal corregida -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -23,9 +29,10 @@
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize">
+            
             <intent-filter android:autoVerify="true">
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         
